@@ -6,7 +6,7 @@ import {
   ReactNode,
 } from "react";
 
-// Typelar
+// Typings
 interface CartItem {
   id: number | string;
   name: string;
@@ -41,14 +41,15 @@ interface CartContextType {
   getItemCount: () => number;
 }
 
-// ✅ Default qiymat `undefined`
+// ✅ Fixed: Provide default undefined value explicitly
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+// ✅ Fixed: Explicitly typed children
 interface CartProviderProps {
   children: ReactNode;
 }
 
-export function CartProvider({ children }: CartProviderProps) {
+export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   useEffect(() => {
