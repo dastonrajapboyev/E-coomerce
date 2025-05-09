@@ -1,13 +1,56 @@
-import { createContext, useState, useContext, useEffect } from "react";
+import {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  ReactNode,
+} from "react";
 
-// Create the context
-const CartContext = createContext();
+// Typelar
+interface CartItem {
+  id: number | string;
+  name: string;
+  price: number;
+  quantity: number;
+  selectedSize: string;
+  selectedColor: string;
+  image: string;
+}
 
-// Create the provider component
-export function CartProvider({ children }) {
-  const [cart, setCart] = useState([]);
+interface CartContextType {
+  cart: CartItem[];
+  addToCart: (
+    product: any,
+    quantity: number,
+    selectedSize: string,
+    selectedColor: string
+  ) => void;
+  updateQuantity: (
+    id: number | string,
+    selectedSize: string,
+    selectedColor: string,
+    action: "increment" | "decrement"
+  ) => void;
+  removeItem: (
+    id: number | string,
+    selectedSize: string,
+    selectedColor: string
+  ) => void;
+  clearCart: () => void;
+  getTotal: () => number;
+  getItemCount: () => number;
+}
 
-  // Load cart from localStorage on initial render
+// ✅ Default qiymat `undefined`
+const CartContext = createContext<CartContextType | undefined>(undefined);
+
+interface CartProviderProps {
+  children: ReactNode;
+}
+
+export function CartProvider({ children }: CartProviderProps) {
+  const [cart, setCart] = useState<CartItem[]>([]);
+
   useEffect(() => {
     const savedCart = localStorage.getItem("cart");
     if (savedCart) {
@@ -20,28 +63,28 @@ export function CartProvider({ children }) {
     }
   }, []);
 
-  // Save cart to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  // Add item to cart
-  const addToCart = (product, quantity, selectedSize, selectedColor) => {
-    // Create a cart item object
-    const cartItem = {
+  const addToCart = (
+    product: any,
+    quantity: number,
+    selectedSize: string,
+    selectedColor: string
+  ) => {
+    const cartItem: CartItem = {
       id: product.id,
       name: product.name,
       price: product.price,
-      quantity: quantity,
-      selectedSize: selectedSize,
-      selectedColor: selectedColor,
-      image:
-        product.productImages && product.productImages.length > 0
-          ? `https://api.sentrobuv.uz/${product.productImages[0].image}`
-          : "https://via.placeholder.com/150",
+      quantity,
+      selectedSize,
+      selectedColor,
+      image: product.productImages?.[0]?.image
+        ? `https://api.sentrobuv.uz/${product.productImages[0].image}`
+        : "https://via.placeholder.com/150",
     };
 
-    // Check if the item already exists in cart (with the same id, size, and color)
     const existingItemIndex = cart.findIndex(
       (item) =>
         item.id === cartItem.id &&
@@ -50,18 +93,20 @@ export function CartProvider({ children }) {
     );
 
     if (existingItemIndex !== -1) {
-      // If item exists, update its quantity
       const updatedCart = [...cart];
       updatedCart[existingItemIndex].quantity += quantity;
       setCart(updatedCart);
     } else {
-      // If item doesn't exist, add it to cart
       setCart((prevCart) => [...prevCart, cartItem]);
     }
   };
 
-  // Update quantity of an item in cart
-  const updateQuantity = (id, selectedSize, selectedColor, action) => {
+  const updateQuantity = (
+    id: number | string,
+    selectedSize: string,
+    selectedColor: string,
+    action: "increment" | "decrement"
+  ) => {
     const updatedCart = cart.map((item) => {
       if (
         item.id === id &&
@@ -79,8 +124,11 @@ export function CartProvider({ children }) {
     setCart(updatedCart);
   };
 
-  // Remove an item from cart
-  const removeItem = (id, selectedSize, selectedColor) => {
+  const removeItem = (
+    id: number | string,
+    selectedSize: string,
+    selectedColor: string
+  ) => {
     const updatedCart = cart.filter(
       (item) =>
         !(
@@ -92,23 +140,14 @@ export function CartProvider({ children }) {
     setCart(updatedCart);
   };
 
-  // Clear the entire cart
-  const clearCart = () => {
-    setCart([]);
-  };
+  const clearCart = () => setCart([]);
 
-  // Calculate the total price of items in the cart
-  const getTotal = () => {
-    return cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  };
+  const getTotal = () =>
+    cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  // Get the total number of items in the cart
-  const getItemCount = () => {
-    return cart.reduce((acc, item) => acc + item.quantity, 0);
-  };
+  const getItemCount = () => cart.reduce((acc, item) => acc + item.quantity, 0);
 
-  // Create the context value
-  const value = {
+  const value: CartContextType = {
     cart,
     addToCart,
     updateQuantity,
@@ -121,10 +160,10 @@ export function CartProvider({ children }) {
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
-// Custom hook to use the cart context
+// ✅ Custom hook
 export const useCart = () => {
   const context = useContext(CartContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useCart must be used within a CartProvider");
   }
   return context;
