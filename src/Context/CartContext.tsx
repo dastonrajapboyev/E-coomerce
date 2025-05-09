@@ -49,7 +49,7 @@ interface CartProviderProps {
   children: ReactNode;
 }
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export function CartProvider({ children }: CartProviderProps) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   useEffect(() => {
