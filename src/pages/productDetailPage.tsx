@@ -57,7 +57,7 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const { addToCart } = useCart();
-  const { onOpen } = useDisclosure();
+  const {} = useDisclosure();
 
   useEffect(() => {
     setLoading(true);
