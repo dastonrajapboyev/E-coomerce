@@ -2,6 +2,10 @@ import CardComponent from "@/components/cards";
 import { title } from "@/components/primitives";
 import DefaultLayout from "@/layouts/default";
 
+interface CardComponentProps {
+  limit?: number; // Make limit optional with ?
+}
+
 export default function ProductsPage() {
   return (
     <DefaultLayout>

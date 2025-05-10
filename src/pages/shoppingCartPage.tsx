@@ -13,6 +13,16 @@ import { title } from "@/components/primitives";
 import { useCart } from "@/Context/CartContext";
 import DefaultLayout from "@/layouts/default";
 
+interface CartItem {
+  id: number | string;
+  name: string;
+  price: number;
+  quantity: number;
+  selectedSize: string;
+  selectedColor: string;
+  image: string;
+}
+
 export default function CartPage() {
   const [loading, setLoading] = useState(false);
 
@@ -35,6 +45,16 @@ export default function CartPage() {
     }, 2000);
   };
 
+  // Add type for item parameter
+  const handleRemoveItem = (item: CartItem) => {
+    removeItem(item.id, item.selectedSize, item.selectedColor);
+  };
+
+  // Add type for acc parameter
+  const calculateTotal = cartItems.reduce((acc: number, item: CartItem) => {
+    return acc + item.price * item.quantity;
+  }, 0);
+
   return (
     <DefaultLayout>
       <div className="container mx-auto px-4 py-8">
@@ -43,8 +63,12 @@ export default function CartPage() {
         {cartItems?.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🛒</div>
-            <h3 className="text-xl font-semibold mb-2">Savatchangiz bo'sh</h3>
-            <p className="text-gray-500 mb-6">Hali mahsulot qo'shmagansiz</p>
+            <h3 className="text-xl font-semibold mb-2">
+              Savatchangiz bo&apos;sh
+            </h3>
+            <p className="text-gray-500 mb-6">
+              Hali mahsulot qo&apos;shmagansiz
+            </p>
             <Button as={Link} to="/products" color="primary">
               Xarid qilishni boshlang
             </Button>
@@ -76,7 +100,8 @@ export default function CartPage() {
                       <div>
                         <h4 className="font-medium">{item.name}</h4>
                         <p className="text-sm text-gray-500 mt-1">
-                          {item.selectedSize && `O'lcham: ${item.selectedSize}`}
+                          {item.selectedSize &&
+                            `O&apos;lcham: ${item.selectedSize}`}
                           {item.selectedColor && item.selectedSize && " | "}
                           {item.selectedColor && `Rang: ${item.selectedColor}`}
                         </p>
@@ -85,14 +110,8 @@ export default function CartPage() {
                           color="danger"
                           variant="light"
                           className="mt-2 p-0"
-                          onClick={() =>
-                            removeItem(
-                              item.id,
-                              item.selectedSize,
-                              item.selectedColor
-                            )
-                          }>
-                          O'chirish
+                          onClick={() => handleRemoveItem(item)}>
+                          O&apos;chirish
                         </Button>
                       </div>
                     </div>
@@ -101,7 +120,7 @@ export default function CartPage() {
                     <div className="md:col-span-2 flex items-center justify-center">
                       <span className="md:hidden font-medium mr-2">Narxi:</span>
                       <span>
-                        {parseInt(item.price).toLocaleString("uz-UZ")} so'm
+                        {item.price.toLocaleString("uz-UZ")} so&apos;m
                       </span>
                     </div>
 
@@ -150,10 +169,8 @@ export default function CartPage() {
                     <div className="md:col-span-2 flex items-center justify-center">
                       <span className="md:hidden font-medium mr-2">Jami:</span>
                       <span className="font-semibold">
-                        {parseInt(item.price * item.quantity).toLocaleString(
-                          "uz-UZ"
-                        )}{" "}
-                        so'm
+                        {(item.price * item.quantity).toLocaleString("uz-UZ")}{" "}
+                        so&apos;m
                       </span>
                     </div>
                   </div>
@@ -164,14 +181,14 @@ export default function CartPage() {
             {/* Order summary */}
             <Card className="mt-6">
               <CardHeader>
-                <h3 className="font-bold">Buyurtma ma'lumotlari</h3>
+                <h3 className="font-bold">Buyurtma ma&apos;lumotlari</h3>
               </CardHeader>
               <CardBody>
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>Mahsulotlar narxi:</span>
                     <span>
-                      {parseInt(getTotal()).toLocaleString("uz-UZ")} so'm
+                      {calculateTotal.toLocaleString("uz-UZ")} so&apos;m
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -180,9 +197,9 @@ export default function CartPage() {
                   </div>
                   <Divider className="my-2" />
                   <div className="flex justify-between font-bold">
-                    <span>Jami to'lov:</span>
+                    <span>Jami to&apos;lov:</span>
                     <span>
-                      {parseInt(getTotal()).toLocaleString("uz-UZ")} so'm
+                      {calculateTotal.toLocaleString("uz-UZ")} so&apos;m
                     </span>
                   </div>
                 </div>

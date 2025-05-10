@@ -11,6 +11,7 @@ interface Product {
   id: number | string;
   name: string;
   price: string | number;
+  brand: string;
   productImages?: Array<{
     image: string;
   }>;
@@ -50,8 +51,15 @@ interface CartContextType {
   getItemCount: () => number;
 }
 
-// ✅ Fixed: Provide default undefined value explicitly
-const CartContext = createContext<CartContextType | undefined>(undefined);
+const CartContext = createContext<CartContextType>({
+  cart: [],
+  addToCart: () => {},
+  updateQuantity: () => {},
+  removeItem: () => {},
+  clearCart: () => {},
+  getTotal: () => 0,
+  getItemCount: () => 0,
+});
 
 // ✅ Fixed: Explicitly typed children
 interface CartProviderProps {
@@ -198,17 +206,20 @@ export function CartProvider({ children }: CartProviderProps) {
       0
     );
 
-  const value: CartContextType = {
-    cart,
-    addToCart,
-    updateQuantity,
-    removeItem,
-    clearCart,
-    getTotal,
-    getItemCount,
-  };
-
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider
+      value={{
+        cart,
+        addToCart,
+        updateQuantity,
+        removeItem,
+        clearCart,
+        getTotal,
+        getItemCount,
+      }}>
+      {children}
+    </CartContext.Provider>
+  );
 }
 
 // ✅ Custom hook
