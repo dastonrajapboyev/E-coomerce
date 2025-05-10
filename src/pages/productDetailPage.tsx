@@ -11,40 +11,73 @@ import {
   Breadcrumbs,
   BreadcrumbItem,
   Divider,
-  Toast,
   useDisclosure,
+  Toast,
 } from "@heroui/react";
 import { title } from "@/components/primitives";
 import { useCart } from "@/Context/CartContext";
-// import { useCart } from "@/contexts/CartContext"; // Import the cart context
+
+interface ProductImage {
+  id: number;
+  image: string;
+}
+
+interface Product {
+  id: number;
+  name: string;
+  brand: string;
+  price: string;
+  size: string[];
+  colors: string[];
+  productImages: ProductImage[];
+}
+
+const COLOR_MAP: Record<string, string> = {
+  black: "#000000",
+  "dark-blue": "#00008B",
+  blue: "#0000FF",
+  red: "#FF0000",
+  white: "#FFFFFF",
+  green: "#008000",
+  yellow: "#FFFF00",
+  purple: "#800080",
+  orange: "#FFA500",
+  pink: "#FFC0CB",
+  gray: "#808080",
+  brown: "#A52A2A",
+};
 
 export default function ProductDetailPage() {
   const { id } = useParams();
-  const [product, setProduct] = useState(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedSize, setSelectedSize] = useState(null);
-  const [selectedColor, setSelectedColor] = useState(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const { addToCart } = useCart(); // Use the cart context
-
-  // Toast notification setup
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const { addToCart } = useCart();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error">("success");
 
   useEffect(() => {
     setLoading(true);
     fetch(`https://api.sentrobuv.uz/products/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Failed to fetch product");
+        }
+        return res.json();
+      })
+      .then((data: Product) => {
         setProduct(data);
 
-        // Agar o'lcham va rang mavjud bo'lsa, birinchisini tanlash
-        if (data.size && data.size.length > 0) {
+        if (data.size?.length > 0) {
           setSelectedSize(data.size[0]);
         }
-        if (data.colors && data.colors.length > 0) {
+        if (data.colors?.length > 0) {
           setSelectedColor(data.colors[0]);
         }
 
@@ -57,7 +90,7 @@ export default function ProductDetailPage() {
       });
   }, [id]);
 
-  const handleQuantityChange = (action) => {
+  const handleQuantityChange = (action: "increment" | "decrement") => {
     if (action === "increment") {
       setQuantity((prev) => prev + 1);
     } else if (action === "decrement" && quantity > 1) {
@@ -66,37 +99,53 @@ export default function ProductDetailPage() {
   };
 
   const handleAddToCart = () => {
-    // Call the addToCart function from context
-    addToCart(product, quantity, selectedSize, selectedColor);
+    if (!product) return;
 
-    // Show success toast
-    setToastMessage(`${product.name} savatchaga qo'shildi`);
-    onOpen();
+    if (product.size?.length > 0 && !selectedSize) {
+      setToastMessage("Iltimos, o'lchamni tanlang");
+      setToastType("error");
+      onOpen();
+      return;
+    }
 
-    // Reset quantity after adding to cart
-    setQuantity(1);
+    if (product.colors?.length > 0 && !selectedColor) {
+      setToastMessage("Iltimos, rangni tanlang");
+      setToastType("error");
+      onOpen();
+      return;
+    }
+
+    setIsAddingToCart(true);
+    try {
+      addToCart(product, quantity, selectedSize!, selectedColor!);
+      setToastMessage("Mahsulot savatchaga qo'shildi");
+      setToastType("success");
+      onOpen();
+    } catch (error) {
+      setToastMessage("Xatolik yuz berdi");
+      setToastType("error");
+      onOpen();
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
-  const colorNameToHex = (colorName) => {
-    const colorMap = {
-      black: "#000000",
-      "dark-blue": "#00008B",
-      blue: "#0000FF",
-      red: "#FF0000",
-      white: "#FFFFFF",
-      green: "#008000",
-      yellow: "#FFFF00",
-      purple: "#800080",
-      orange: "#FFA500",
-      pink: "#FFC0CB",
-      gray: "#808080",
-      brown: "#A52A2A",
-    };
-
-    return colorMap[colorName] || colorName;
+  const colorNameToHex = (colorName: string): string => {
+    return COLOR_MAP[colorName] || colorName;
   };
 
-  // Yuklash holati
+  const getImageUrl = (imagePath: string): string => {
+    return `https://api.sentrobuv.uz/${imagePath}`;
+  };
+
+  const handleImageError = () => {
+    // fallback logic if needed
+  };
+
+  const handleThumbnailError = () => {
+    // fallback logic if needed
+  };
+
   if (loading) {
     return (
       <DefaultLayout>
@@ -111,12 +160,11 @@ export default function ProductDetailPage() {
     );
   }
 
-  // Xatolik holati
   if (error || !product) {
     return (
       <DefaultLayout>
         <div className="flex flex-col items-center justify-center h-96">
-          <h2 className={title({ color: "danger" })}>Xatolik</h2>
+          <h2 className={title({ color: "foreground" })}>Xatolik</h2>
           <p className="text-lg">{error || "Mahsulot topilmadi"}</p>
           <Button as="a" href="/products" color="primary" className="mt-4">
             Mahsulotlar sahifasiga qaytish
@@ -129,7 +177,6 @@ export default function ProductDetailPage() {
   return (
     <DefaultLayout>
       <div className="container mx-auto py-8">
-        {/* Bread Crumbs */}
         <Breadcrumbs className="mb-6">
           <BreadcrumbItem href="/">Bosh sahifa</BreadcrumbItem>
           <BreadcrumbItem href="/products">Mahsulotlar</BreadcrumbItem>
@@ -137,35 +184,44 @@ export default function ProductDetailPage() {
         </Breadcrumbs>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Rasmlar qismi */}
+          {/* Image Section */}
           <div className="flex flex-col gap-4">
             <div className="rounded-xl overflow-hidden h-96 border border-gray-200">
               <Image
-                src={`https://api.sentrobuv.uz/${product.productImages[selectedImage]?.image}`}
+                src={getImageUrl(product.productImages[selectedImage]?.image)}
                 alt={product.name}
                 className="w-full h-full object-cover object-center"
+                onError={handleImageError}
               />
             </div>
 
-            {/* Rasmlar navigatsiyasi */}
+            {/* Image Navigation */}
             <div className="flex gap-2 overflow-x-auto py-2">
               {product.productImages.map((img, index) => (
-                <div
+                <button
                   key={img.id}
+                  type="button"
+                  tabIndex={0}
                   className={`border-2 rounded-lg overflow-hidden cursor-pointer w-24 h-24 
                     ${selectedImage === index ? "border-primary" : "border-gray-200"}`}
-                  onClick={() => setSelectedImage(index)}>
+                  onClick={() => setSelectedImage(index)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      setSelectedImage(index);
+                    }
+                  }}>
                   <Image
-                    src={`https://api.sentrobuv.uz/${img.image}`}
+                    src={getImageUrl(img.image)}
                     alt={`${product.name} - rasm ${index + 1}`}
                     className="w-full h-full object-cover"
+                    onError={handleThumbnailError}
                   />
-                </div>
+                </button>
               ))}
             </div>
           </div>
 
-          {/* Mahsulot ma'lumotlari */}
+          {/* Product Details */}
           <div className="flex flex-col gap-4">
             <div>
               <Chip color="primary" variant="flat" className="mb-2">
@@ -174,7 +230,6 @@ export default function ProductDetailPage() {
               <h1 className={title()}>{product.name}</h1>
               <div className="flex items-center gap-2 mt-2">
                 <div className="flex">
-                  {/* Lucide-react o'rniga oddiy unicode star belgilari */}
                   {[1, 2, 3, 4, 5].map((star) => (
                     <span key={star} className="text-yellow-500">
                       ★
@@ -187,29 +242,36 @@ export default function ProductDetailPage() {
 
             <div className="my-4">
               <h2 className={title({ size: "sm" })}>
-                {parseInt(product.price).toLocaleString("uz-UZ")} so'm
+                {parseInt(product.price).toLocaleString("uz-UZ")} so&apos;m
               </h2>
               <p className="text-sm text-gray-500">Barcha soliqlar bilan</p>
             </div>
 
             <Divider className="my-4" />
 
-            {/* Ranglar */}
+            {/* Colors */}
             {product.colors && product.colors.length > 0 && (
               <div className="mb-4">
                 <h3 className="font-semibold mb-2">Rang tanlang</h3>
                 <div className="flex flex-wrap gap-2">
                   {product.colors.map((color) => (
-                    <div
+                    <button
                       key={color}
+                      type="button"
+                      tabIndex={0}
                       className={`w-10 h-10 rounded-full cursor-pointer flex items-center justify-center
                         ${selectedColor === color ? "ring-2 ring-offset-2 ring-primary" : ""}`}
                       onClick={() => setSelectedColor(color)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          setSelectedColor(color);
+                        }
+                      }}
                       style={{ backgroundColor: colorNameToHex(color) }}>
                       {selectedColor === color && (
                         <div className="w-3 h-3 rounded-full bg-white" />
                       )}
-                    </div>
+                    </button>
                   ))}
                 </div>
                 <p className="text-sm mt-1">
@@ -219,10 +281,10 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* O'lchamlar */}
+            {/* Sizes */}
             {product.size && product.size.length > 0 && (
               <div className="mb-4">
-                <h3 className="font-semibold mb-2">O'lcham tanlang</h3>
+                <h3 className="font-semibold mb-2">O&apos;lcham tanlang</h3>
                 <div className="flex flex-wrap gap-2">
                   {product.size.map((size) => (
                     <Chip
@@ -238,7 +300,7 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Miqdor */}
+            {/* Quantity */}
             <div className="mb-6">
               <h3 className="font-semibold mb-2">Miqdor</h3>
               <div className="flex items-center gap-2">
@@ -263,14 +325,16 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Xarid qilish tugmalari */}
+            {/* Action Buttons */}
             <div className="flex gap-4 mt-2">
               <Button
                 color="primary"
                 size="lg"
                 className="flex-grow"
-                onClick={handleAddToCart}>
-                🛒 Savatchaga qo'shish
+                onClick={handleAddToCart}
+                isLoading={isAddingToCart}
+                isDisabled={!selectedSize || !selectedColor}>
+                🛒 Savatchaga qo&apos;shish
               </Button>
               <Button
                 isIconOnly
@@ -282,7 +346,7 @@ export default function ProductDetailPage() {
               </Button>
             </div>
 
-            {/* Mahsulot haqida ma'lumot */}
+            {/* Product Information */}
             <div className="mt-8">
               <Tabs variant="underlined" aria-label="Mahsulot ma'lumotlari">
                 <Tab key="details" title="Mahsulot haqida">
@@ -300,7 +364,9 @@ export default function ProductDetailPage() {
                         <li>Yuqori sifatli materiallar</li>
                         <li>Zamonaviy dizayn</li>
                         <li>Qulay va issiq</li>
-                        <li>Uzoq muddat foydalanish uchun mo'ljallangan</li>
+                        <li>
+                          Uzoq muddat foydalanish uchun mo&apos;ljallangan
+                        </li>
                       </ul>
                     </div>
                   </div>
@@ -308,10 +374,10 @@ export default function ProductDetailPage() {
                 <Tab key="shipping" title="Yetkazib berish">
                   <div className="p-4">
                     <h3 className="font-semibold mb-2">
-                      Yetkazib berish ma'lumotlari
+                      Yetkazib berish ma&apos;lumotlari
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Toshkent shahri bo'ylab 1-3 kun ichida bepul yetkazib
+                      Toshkent shahri bo&apos;ylab 1-3 kun ichida bepul yetkazib
                       beriladi. Viloyatlarga 3-5 kun ichida yetkazib berish
                       mavjud.
                     </p>

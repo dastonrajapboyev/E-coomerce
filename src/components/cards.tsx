@@ -13,6 +13,12 @@ interface Product {
   }>;
 }
 
+interface ApiResponse {
+  data: {
+    products: Product[];
+  };
+}
+
 interface CardComponentProps {
   limit?: number;
 }
@@ -26,7 +32,7 @@ export default function CardComponent({ limit }: CardComponentProps) {
     setLoading(true);
     fetch("https://api.sentrobuv.uz/products")
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: ApiResponse) => {
         const productList = data.data.products || [];
         // Agar limit berilgan bo'lsa, shu limitgacha chiqarish
         const limitedProducts = limit
