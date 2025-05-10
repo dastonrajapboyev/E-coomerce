@@ -17,7 +17,7 @@ export default function ShoppingCart() {
     <div className="w-full">
       {cartItems.length === 0 ? (
         <div className="text-center py-6">
-          <p className="text-gray-500">Savatchangiz bo'sh</p>
+          <p className="text-gray-500">Savatchangiz bo&apos;sh</p>
           <Button
             as={Link}
             to="/products"
@@ -50,9 +50,9 @@ export default function ShoppingCart() {
                     {item.selectedColor && `Rang: ${item.selectedColor}`}
                   </p>
                   <div className="flex justify-between items-center mt-1">
-                    <p className="text-xs font-semibold">
-                      {parseInt(item.price).toLocaleString("uz-UZ")} so'm
-                    </p>
+                    <span>
+                      {item.price.toString().toLocaleString()} so&apos;m
+                    </span>
                     <p className="text-xs">x{item.quantity}</p>
                   </div>
                 </div>
@@ -63,7 +63,7 @@ export default function ShoppingCart() {
           <div className="flex justify-between py-2">
             <span className="font-medium">Jami:</span>
             <span className="font-semibold">
-              {parseInt(getTotal()).toLocaleString("uz-UZ")} so'm
+              {getTotal().toString().toLocaleString()} so&apos;m
             </span>
           </div>
           <div className="flex gap-2 mt-2">
@@ -73,7 +73,7 @@ export default function ShoppingCart() {
               size="sm"
               as={Link}
               to="/cart">
-              Savatchani ko'rish
+              Savatchani ko&apos;rish
             </Button>
             <Button
               color="danger"

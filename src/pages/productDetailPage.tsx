@@ -12,7 +12,6 @@ import {
   BreadcrumbItem,
   Divider,
   useDisclosure,
-  Toast,
 } from "@heroui/react";
 import { title } from "@/components/primitives";
 import { useCart } from "@/Context/CartContext";
@@ -58,9 +57,7 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const { addToCart } = useCart();
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState<"success" | "error">("success");
+  const { onOpen } = useDisclosure();
 
   useEffect(() => {
     setLoading(true);
@@ -102,29 +99,21 @@ export default function ProductDetailPage() {
     if (!product) return;
 
     if (product.size?.length > 0 && !selectedSize) {
-      setToastMessage("Iltimos, o'lchamni tanlang");
-      setToastType("error");
-      onOpen();
+      // Handle size selection error
       return;
     }
 
     if (product.colors?.length > 0 && !selectedColor) {
-      setToastMessage("Iltimos, rangni tanlang");
-      setToastType("error");
-      onOpen();
+      // Handle color selection error
       return;
     }
 
     setIsAddingToCart(true);
     try {
       addToCart(product, quantity, selectedSize!, selectedColor!);
-      setToastMessage("Mahsulot savatchaga qo'shildi");
-      setToastType("success");
-      onOpen();
+      // Handle successful addition
     } catch (error) {
-      setToastMessage("Xatolik yuz berdi");
-      setToastType("error");
-      onOpen();
+      // Handle error
     } finally {
       setIsAddingToCart(false);
     }

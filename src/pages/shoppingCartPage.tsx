@@ -26,13 +26,7 @@ interface CartItem {
 export default function CartPage() {
   const [loading, setLoading] = useState(false);
 
-  const {
-    cart: cartItems,
-    removeItem,
-    updateQuantity,
-    clearCart,
-    getTotal,
-  } = useCart();
+  const { cart: cartItems, removeItem, updateQuantity, clearCart } = useCart();
 
   // Handle checkout process
   const handleCheckout = () => {
