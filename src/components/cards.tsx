@@ -2,10 +2,25 @@ import { useEffect, useState } from "react";
 import { Card, CardHeader, CardBody, Image } from "@heroui/react";
 import { Link } from "react-router-dom";
 
-export default function CardComponent({ limit }) {
-  const [products, setProducts] = useState([]);
+interface Product {
+  id: number;
+  name: string;
+  brand: string;
+  price: string;
+  size: string[];
+  productImages: Array<{
+    image: string;
+  }>;
+}
+
+interface CardComponentProps {
+  limit?: number;
+}
+
+export default function CardComponent({ limit }: CardComponentProps) {
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -64,7 +79,8 @@ export default function CardComponent({ limit }) {
               </small>
               <h4 className="font-bold text-large">{product.name}</h4>
               <p className="text-default-500 mt-1">
-                Narxi: {parseInt(product.price).toLocaleString("uz-UZ")} so'm
+                Narxi: {parseInt(product.price).toLocaleString("uz-UZ")}{" "}
+                so&apos;m
               </p>
             </CardHeader>
           </Card>
