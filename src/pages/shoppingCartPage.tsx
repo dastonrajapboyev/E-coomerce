@@ -1,269 +1,61 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
+  Button,
   Card,
   CardBody,
-  CardFooter,
-  Image,
-  Button,
-  Spinner,
+  CardHeader,
   Divider,
+  Image,
+  Spinner,
 } from "@heroui/react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { title } from "@/components/primitives";
+import { useCart } from "@/Context/CartContext";
 import DefaultLayout from "@/layouts/default";
 
-interface Product {
-  id: string;
-  name: string;
-  price: string;
-  brand: string;
-  colors: string[];
-  size: string[];
-  productImages: Array<{
-    id: string;
-    image: string;
-  }>;
-}
-
 interface CartItem {
-  id: string;
-  basket_id: string;
-  product_id: string;
-  color: string;
-  count: number;
-  size: string;
+  id: number | string;
+  name: string;
   price: number;
-  product: Product;
-  createdAt: string;
-  updatedAt: string;
+  quantity: number;
+  selectedSize: string;
+  selectedColor: string;
+  image: string;
 }
 
 export default function CartPage() {
-  const [loading, setLoading] = useState(true);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchCartItems();
-  }, []);
-
-  const fetchCartItems = async () => {
-    try {
-      const tokenData = localStorage.getItem("token");
-      if (!tokenData) {
-        setError("Xarid qilish uchun avval tizimga kiring");
-        setLoading(false);
-        return;
-      }
-
-      const token = extractToken(tokenData);
-      const response = await fetch("https://api.sentrobuv.uz/baskets", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        if (
-          data.message === "jwt expired" ||
-          data.message === "jwt malformed"
-        ) {
-          localStorage.removeItem("token");
-          setError("Sizning sessiyangiz tugagan. Iltimos, qaytadan kiring.");
-          navigate("/signin");
-          return;
-        }
-        throw new Error(data.message || "Xatolik yuz berdi");
-      }
-
-      const data = await response.json();
-      console.log("API Response:", data); // Debug log
-
-      // Check if data is an array and has items
-      if (Array.isArray(data) && data.length > 0) {
-        const basketItems = data[0]?.basketItems;
-        if (Array.isArray(basketItems)) {
-          setCartItems(basketItems);
-        } else {
-          console.error("basketItems is not an array:", basketItems);
-          setCartItems([]);
-        }
-      } else {
-        console.log("No basket data found");
-        setCartItems([]);
-      }
-    } catch (error) {
-      console.error("Error fetching cart items:", error);
-      setError(error instanceof Error ? error.message : "Xatolik yuz berdi");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const extractToken = (tokenData: string): string => {
-    try {
-      const parsedToken = JSON.parse(tokenData);
-      if (parsedToken && parsedToken.tokens) {
-        return parsedToken.tokens.accessToken;
-      } else if (parsedToken && parsedToken.accessToken) {
-        return parsedToken.accessToken;
-      }
-      return tokenData;
-    } catch {
-      return tokenData;
-    }
-  };
+  const { cart: cartItems, removeItem, updateQuantity, clearCart } = useCart();
 
   // Handle checkout process
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     setLoading(true);
-    try {
-      const tokenData = localStorage.getItem("token");
-      if (!tokenData) {
-        alert("Xarid qilish uchun avval tizimga kiring");
-        navigate("/signin");
-        return;
-      }
-
-      const token = extractToken(tokenData);
-      const response = await fetch("https://api.sentrobuv.uz/orders/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          items: cartItems.map((item) => ({
-            product_id: item.id,
-            quantity: item.count,
-            color: item.color,
-            size: item.size,
-          })),
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(
-          data.message || "Buyurtma yaratishda xatolik yuz berdi"
-        );
-      }
-
-      alert("Xaridingiz uchun rahmat! Buyurtmangiz qabul qilindi.");
-      setCartItems([]);
-    } catch (error) {
-      console.error("Error during checkout:", error);
-      alert(error instanceof Error ? error.message : "Xatolik yuz berdi");
-    } finally {
+    // Simulate checkout process
+    setTimeout(() => {
       setLoading(false);
-    }
+      clearCart();
+      alert("Xaridingiz uchun rahmat! Buyurtmangiz qabul qilindi.");
+    }, 2000);
   };
 
   // Add type for item parameter
-  const handleRemoveItem = async (item: CartItem) => {
-    try {
-      const tokenData = localStorage.getItem("token");
-      if (!tokenData) {
-        alert("Xarid qilish uchun avval tizimga kiring");
-        navigate("/signin");
-        return;
-      }
-
-      const token = extractToken(tokenData);
-      const response = await fetch(
-        `https://api.sentrobuv.uz/baskets/delete/basket-items/${item.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(
-          data.message || "Mahsulotni o'chirishda xatolik yuz berdi"
-        );
-      }
-
-      // Fetch updated cart data after successful deletion
-      await fetchCartItems();
-    } catch (error) {
-      console.error("Error removing item:", error);
-      alert(error instanceof Error ? error.message : "Xatolik yuz berdi");
-    }
+  const handleRemoveItem = (item: CartItem) => {
+    removeItem(item.id, item.selectedSize, item.selectedColor);
   };
 
   // Add type for acc parameter
   const calculateTotal = cartItems.reduce((acc: number, item: CartItem) => {
-    return acc + item.price * item.count;
+    return acc + item.price * item.quantity;
   }, 0);
-
-  const handleClearCart = async () => {
-    try {
-      const tokenData = localStorage.getItem("token");
-      if (!tokenData) {
-        alert("Xarid qilish uchun avval tizimga kiring");
-        navigate("/signin");
-        return;
-      }
-
-      const token = extractToken(tokenData);
-      const response = await fetch("https://api.sentrobuv.uz/baskets/clear", {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(
-          data.message || "Savatchani tozalashda xatolik yuz berdi"
-        );
-      }
-
-      setCartItems([]);
-    } catch (error) {
-      console.error("Error clearing cart:", error);
-      alert(error instanceof Error ? error.message : "Xatolik yuz berdi");
-    }
-  };
-
-  if (loading) {
-    return (
-      <DefaultLayout>
-        <div className="flex justify-center items-center h-96">
-          <Spinner size="lg" color="secondary" label="Yuklanmoqda..." />
-        </div>
-      </DefaultLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <DefaultLayout>
-        <div className="flex flex-col items-center justify-center h-96">
-          <h2 className={title({ color: "foreground" })}>Xatolik</h2>
-          <p className="text-lg">{error}</p>
-          <Button as={Link} to="/signin" color="primary" className="mt-4">
-            Tizimga kirish
-          </Button>
-        </div>
-      </DefaultLayout>
-    );
-  }
 
   return (
     <DefaultLayout>
-      <div className="container mx-auto px-4 ">
+      <div className="container mx-auto px-4 py-8">
         <h1 className={title({ size: "lg" })}>Xarid savatchangiz</h1>
 
         {cartItems?.length === 0 ? (
-          <div className="text-center py-12 ">
+          <div className="text-center py-12">
             <div className="text-6xl mb-4">🛒</div>
             <h3 className="text-xl font-semibold mb-2">
               Savatchangiz bo&apos;sh
@@ -276,16 +68,17 @@ export default function CartPage() {
             </Button>
           </div>
         ) : (
-          <div className="mt-4">
+          <>
             <div className="grid grid-cols-12 text-sm font-medium border-b pb-2 mb-4 hidden md:grid mt-8">
               <div className="col-span-6">Mahsulot</div>
               <div className="col-span-2 text-center">Narxi</div>
-              <div className="col-span-4 text-center">Jami</div>
+              <div className="col-span-2 text-center">Miqdori</div>
+              <div className="col-span-2 text-center">Jami</div>
             </div>
 
             {cartItems?.map((item) => (
               <Card
-                key={`${item.id}-${item.size}-${item.color}`}
+                key={`${item.id}-${item.selectedSize}-${item.selectedColor}`}
                 className="mb-4">
                 <CardBody>
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
@@ -293,17 +86,18 @@ export default function CartPage() {
                     <div className="md:col-span-6 flex gap-4">
                       <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
                         <Image
-                          src={`https://api.sentrobuv.uz/${item.product.productImages[0]?.image}`}
-                          alt={item.product.name}
+                          src={item.image}
+                          alt={item.name}
                           className="w-full h-full object-cover"
                         />
                       </div>
                       <div>
-                        <h4 className="font-medium">{item.product.name}</h4>
+                        <h4 className="font-medium">{item.name}</h4>
                         <p className="text-sm text-gray-500 mt-1">
-                          {item.size && `O'lcham: ${item.size}`}
-                          {item.color && item.size && " | "}
-                          {item.color && `Rang: ${item.color}`}
+                          {item.selectedSize &&
+                            `O&apos;lcham: ${item.selectedSize}`}
+                          {item.selectedColor && item.selectedSize && " | "}
+                          {item.selectedColor && `Rang: ${item.selectedColor}`}
                         </p>
                         <Button
                           size="sm"
@@ -324,11 +118,52 @@ export default function CartPage() {
                       </span>
                     </div>
 
+                    {/* Quantity */}
+                    <div className="md:col-span-2 flex items-center md:justify-center">
+                      <span className="md:hidden font-medium mr-2">
+                        Miqdori:
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          isIconOnly
+                          color="default"
+                          variant="flat"
+                          size="sm"
+                          onClick={() =>
+                            updateQuantity(
+                              item.id,
+                              item.selectedSize,
+                              item.selectedColor,
+                              "decrement"
+                            )
+                          }
+                          isDisabled={item.quantity <= 1}>
+                          -
+                        </Button>
+                        <span className="w-8 text-center">{item.quantity}</span>
+                        <Button
+                          isIconOnly
+                          color="default"
+                          variant="flat"
+                          size="sm"
+                          onClick={() =>
+                            updateQuantity(
+                              item.id,
+                              item.selectedSize,
+                              item.selectedColor,
+                              "increment"
+                            )
+                          }>
+                          +
+                        </Button>
+                      </div>
+                    </div>
+
                     {/* Subtotal */}
-                    <div className="md:col-span-4 flex items-center justify-center">
+                    <div className="md:col-span-2 flex items-center justify-center">
                       <span className="md:hidden font-medium mr-2">Jami:</span>
                       <span className="font-semibold">
-                        {(item.price * item.count).toLocaleString("uz-UZ")}{" "}
+                        {(item.price * item.quantity).toLocaleString("uz-UZ")}{" "}
                         so&apos;m
                       </span>
                     </div>
@@ -339,7 +174,10 @@ export default function CartPage() {
 
             {/* Order summary */}
             <Card className="mt-6">
-              <CardFooter>
+              <CardHeader>
+                <h3 className="font-bold">Buyurtma ma&apos;lumotlari</h3>
+              </CardHeader>
+              <CardBody>
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>Mahsulotlar narxi:</span>
@@ -359,13 +197,13 @@ export default function CartPage() {
                     </span>
                   </div>
                 </div>
-              </CardFooter>
+              </CardBody>
             </Card>
 
             {/* Action buttons */}
             <div className="mt-6 flex flex-col md:flex-row gap-4 justify-between">
               <div className="flex gap-2">
-                <Button color="danger" variant="flat" onClick={handleClearCart}>
+                <Button color="danger" variant="flat" onClick={clearCart}>
                   Savatchani tozalash
                 </Button>
                 <Button as={Link} to="/products" variant="flat">
@@ -383,7 +221,7 @@ export default function CartPage() {
                 )}
               </Button>
             </div>
-          </div>
+          </>
         )}
       </div>
     </DefaultLayout>

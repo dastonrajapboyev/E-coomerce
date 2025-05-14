@@ -51,7 +51,15 @@ interface CartContextType {
   getItemCount: () => number;
 }
 
-const CartContext = createContext<CartContextType | null>(null);
+const CartContext = createContext<CartContextType>({
+  cart: [],
+  addToCart: () => {},
+  updateQuantity: () => {},
+  removeItem: () => {},
+  clearCart: () => {},
+  getTotal: () => 0,
+  getItemCount: () => 0,
+});
 
 // ✅ Fixed: Explicitly typed children
 interface CartProviderProps {
@@ -198,17 +206,20 @@ export function CartProvider({ children }: CartProviderProps) {
       0
     );
 
-  const value: CartContextType = {
-    cart,
-    addToCart,
-    updateQuantity,
-    removeItem,
-    clearCart,
-    getTotal,
-    getItemCount,
-  };
-
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider
+      value={{
+        cart,
+        addToCart,
+        updateQuantity,
+        removeItem,
+        clearCart,
+        getTotal,
+        getItemCount,
+      }}>
+      {children}
+    </CartContext.Provider>
+  );
 }
 
 // ✅ Custom hook

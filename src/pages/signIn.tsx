@@ -13,32 +13,40 @@ import { title } from "@/components/primitives";
 import DefaultLayout from "@/layouts/default";
 
 export default function SignIn() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       const response = await fetch("https://api.sentrobuv.uz/users/signin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(formData),
       });
 
-      if (!response.ok) {
-        throw new Error("Login failed");
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("token", data.tokens.refreshToken);
+        navigate("/");
+      } else {
+        const errorData = await response.json();
+        setError(
+          errorData.message || "Xatolik yuz berdi. Qaytadan urinib ko'ring."
+        );
       }
-
-      const data = await response.json();
-      localStorage.setItem("token", data.token);
-      navigate("/");
-    } catch (err) {
-      console.error("Login error:", err);
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("An error occurred during login.");
     } finally {
       setLoading(false);
     }
@@ -64,16 +72,20 @@ export default function SignIn() {
                   type="email"
                   label="Email"
                   placeholder="Email manzilingizni kiriting"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   required
                 />
                 <Input
                   type="password"
                   label="Parol"
                   placeholder="Parolingizni kiriting"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   required
                 />
                 <Button
