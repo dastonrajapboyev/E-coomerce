@@ -1,7 +1,7 @@
 import { Kbd } from "@heroui/kbd";
 import { Input } from "@heroui/input";
 import {
-  Navbar as HeroUINavbar,
+  // Navbar as HeroUINavbar,
   NavbarBrand,
   NavbarContent,
   NavbarItem,
@@ -9,8 +9,8 @@ import {
   // NavbarMenu,
   // NavbarMenuItem,
 } from "@heroui/navbar";
-import { link as linkStyles } from "@heroui/theme";
-import clsx from "clsx";
+// import { link as linkStyles } from "@heroui/theme";
+// import clsx from "clsx";
 import {
   Navbar as NextUINavbar,
   NavbarMenu,
@@ -25,7 +25,7 @@ import {
 } from "@heroui/react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 
-import { siteConfig } from "@/config/site";
+// import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { Logo, SearchIcon } from "@/components/icons";
 import ShoppingCart from "@/pages/shoppingCart";
