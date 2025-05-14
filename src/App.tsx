@@ -7,10 +7,10 @@ import AboutPage from "@/pages/about";
 import ProductsPage from "./pages/productsPage";
 import ProductDetailPage from "./pages/productDetailPage";
 import { CartProvider } from "./Context/CartContext";
-import CartPage from "./pages/shoppingCartPage";
 
 import SignIn from "@/pages/signIn";
 import SignUp from "@/pages/signUp";
+import CartPage from "./pages/shoppingCartPage";
 function App() {
   return (
     <CartProvider>
