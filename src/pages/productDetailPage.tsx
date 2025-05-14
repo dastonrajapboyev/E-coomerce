@@ -58,7 +58,7 @@ export default function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
-  const { isOpen, onOpen } = useDisclosure();
+  const { onOpen } = useDisclosure();
   const { addToCart } = useCart();
 
   useEffect(() => {

@@ -37,14 +37,14 @@ interface CartItem {
 
 export default function ShoppingCart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   const fetchCartItems = useCallback(async () => {
     try {
       const tokenData = localStorage.getItem("token");
       if (!tokenData) {
-        setLoading(false);
+        setError("Token topilmadi");
         return;
       }
 
@@ -76,8 +76,6 @@ export default function ShoppingCart() {
       }
     } catch (error) {
       console.error("Error fetching cart items:", error);
-    } finally {
-      setLoading(false);
     }
   }, []);
 

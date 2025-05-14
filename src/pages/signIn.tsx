@@ -17,7 +17,6 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +39,6 @@ export default function SignIn() {
       navigate("/");
     } catch (err) {
       console.error("Login error:", err);
-      setError("An error occurred during login.");
     } finally {
       setLoading(false);
     }

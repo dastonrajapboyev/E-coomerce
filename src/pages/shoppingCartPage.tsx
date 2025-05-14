@@ -202,54 +202,6 @@ export default function CartPage() {
     return acc + item.price * item.count;
   }, 0);
 
-  const handleUpdateQuantity = async (
-    item: CartItem,
-    action: "increment" | "decrement"
-  ) => {
-    try {
-      const tokenData = localStorage.getItem("token");
-      if (!tokenData) {
-        alert("Xarid qilish uchun avval tizimga kiring");
-        navigate("/signin");
-        return;
-      }
-
-      const token = extractToken(tokenData);
-      const newQuantity =
-        action === "increment" ? item.count + 1 : Math.max(1, item.count - 1);
-
-      const response = await fetch(
-        `https://api.sentrobuv.uz/baskets/${item.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            quantity: newQuantity,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(
-          data.message || "Miqdorni o'zgartirishda xatolik yuz berdi"
-        );
-      }
-
-      setCartItems((prevItems) =>
-        prevItems.map((i) =>
-          i.id === item.id ? { ...i, count: newQuantity } : i
-        )
-      );
-    } catch (error) {
-      console.error("Error updating quantity:", error);
-      alert(error instanceof Error ? error.message : "Xatolik yuz berdi");
-    }
-  };
-
   const handleClearCart = async () => {
     try {
       const tokenData = localStorage.getItem("token");
