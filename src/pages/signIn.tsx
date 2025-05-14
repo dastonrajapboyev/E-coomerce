@@ -22,7 +22,7 @@ export default function SignIn() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await fetch("https://api.sentrobuv.uz/auth/login", {
+      const response = await fetch("https://api.sentrobuv.uz/users/signin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
