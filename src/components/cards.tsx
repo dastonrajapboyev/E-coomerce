@@ -4,11 +4,11 @@ import {
   CardBody,
   CardFooter,
   Image,
-  Button,
+  // Button,
   Spinner,
 } from "@heroui/react";
 import { Link } from "react-router-dom";
-import { useCart } from "@/Context/CartContext";
+// import { useCart } from "@/Context/CartContext";
 
 interface Product {
   id: string;
@@ -31,7 +31,7 @@ export default function Cards({ limit }: CardsProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { addToCart } = useCart();
+  // const { addToCart } = useCart();
 
   useEffect(() => {
     const fetchProducts = async () => {

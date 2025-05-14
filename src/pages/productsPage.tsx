@@ -4,14 +4,14 @@ import {
   CardBody,
   CardFooter,
   Image,
-  Button,
+  // Button,
   Spinner,
   Input,
 } from "@heroui/react";
 import { Link } from "react-router-dom";
 import { title } from "@/components/primitives";
 import DefaultLayout from "@/layouts/default";
-import { useCart } from "@/Context/CartContext";
+// import { useCart } from "@/Context/CartContext";
 
 interface Product {
   id: string;
@@ -34,7 +34,7 @@ export default function ProductsPage() {
   const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("");
-  const { addToCart } = useCart();
+  // const { addToCart } = useCart();
 
   useEffect(() => {
     const fetchProducts = async () => {
