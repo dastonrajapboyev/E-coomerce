@@ -37,14 +37,12 @@ interface CartItem {
 
 export default function ShoppingCart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   const fetchCartItems = useCallback(async () => {
     try {
       const tokenData = localStorage.getItem("token");
       if (!tokenData) {
-        setError("Token topilmadi");
         return;
       }
 
