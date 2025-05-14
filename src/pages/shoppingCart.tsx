@@ -37,7 +37,7 @@ interface CartItem {
 
 export default function ShoppingCart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const fetchCartItems = async () => {
     try {
@@ -106,6 +106,7 @@ export default function ShoppingCart() {
   const MiniCart = () => {
     const displayedItems = cartItems.slice(0, 2);
     const remainingCount = Math.max(0, cartItems.length - 2);
+    <h1>loading; {loading}</h1>;
 
     return (
       <div className="w-full">
