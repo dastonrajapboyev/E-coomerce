@@ -1,16 +1,15 @@
 import { useState, useEffect } from "react";
 import {
-  Button,
   Card,
   CardBody,
-  CardHeader,
-  Divider,
+  CardFooter,
   Image,
+  Button,
   Spinner,
+  Divider,
 } from "@heroui/react";
 import { Link, useNavigate } from "react-router-dom";
 import { title } from "@/components/primitives";
-import { useCart } from "@/Context/CartContext";
 import DefaultLayout from "@/layouts/default";
 
 interface Product {
@@ -388,10 +387,7 @@ export default function CartPage() {
 
             {/* Order summary */}
             <Card className="mt-6">
-              <CardHeader>
-                <h3 className="font-bold">Buyurtma ma&apos;lumotlari</h3>
-              </CardHeader>
-              <CardBody>
+              <CardFooter>
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>Mahsulotlar narxi:</span>
@@ -411,7 +407,7 @@ export default function CartPage() {
                     </span>
                   </div>
                 </div>
-              </CardBody>
+              </CardFooter>
             </Card>
 
             {/* Action buttons */}

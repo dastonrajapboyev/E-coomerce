@@ -7,10 +7,6 @@ import {
   Button,
   Spinner,
   Input,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
 } from "@heroui/react";
 import { Link } from "react-router-dom";
 import { title } from "@/components/primitives";
@@ -110,55 +106,41 @@ export default function ProductsPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <Dropdown>
-            <DropdownTrigger>
-              <Button variant="bordered">{selectedBrand || "Brend"}</Button>
-            </DropdownTrigger>
-            <DropdownMenu
-              aria-label="Brend tanlash"
-              onAction={(key) =>
-                setSelectedBrand(key === "all" ? "" : key.toString())
-              }
-              items={[
-                { key: "all", label: "Barcha brendlar" },
-                ...brands.map((brand) => ({ key: brand, label: brand })),
-              ]}
-            />
-          </Dropdown>
+          <select
+            className="w-full p-2 border rounded-lg bg-background text-foreground"
+            value={selectedBrand}
+            onChange={(e) => setSelectedBrand(e.target.value)}>
+            <option value="">Barcha brendlar</option>
+            {brands.map((brand) => (
+              <option key={brand} value={brand}>
+                {brand}
+              </option>
+            ))}
+          </select>
 
-          <Dropdown>
-            <DropdownTrigger>
-              <Button variant="bordered">
-                {selectedSize || "O&apos;lcham"}
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu
-              aria-label="O'lcham tanlash"
-              onAction={(key) =>
-                setSelectedSize(key === "all" ? "" : key.toString())
-              }
-              items={[
-                { key: "all", label: "Barcha o&apos;lchamlar" },
-                ...sizes.map((size) => ({ key: size, label: size })),
-              ]}
-            />
-          </Dropdown>
+          <select
+            className="w-full p-2 border rounded-lg bg-background text-foreground"
+            value={selectedSize}
+            onChange={(e) => setSelectedSize(e.target.value)}>
+            <option value="">Barcha o&apos;lchamlar</option>
+            {sizes.map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
+          </select>
 
-          <Dropdown>
-            <DropdownTrigger>
-              <Button variant="bordered">{selectedColor || "Rang"}</Button>
-            </DropdownTrigger>
-            <DropdownMenu
-              aria-label="Rang tanlash"
-              onAction={(key) =>
-                setSelectedColor(key === "all" ? "" : key.toString())
-              }
-              items={[
-                { key: "all", label: "Barcha ranglar" },
-                ...colors.map((color) => ({ key: color, label: color })),
-              ]}
-            />
-          </Dropdown>
+          <select
+            className="w-full p-2 border rounded-lg bg-background text-foreground"
+            value={selectedColor}
+            onChange={(e) => setSelectedColor(e.target.value)}>
+            <option value="">Barcha ranglar</option>
+            {colors.map((color) => (
+              <option key={color} value={color}>
+                {color}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Products Grid */}
