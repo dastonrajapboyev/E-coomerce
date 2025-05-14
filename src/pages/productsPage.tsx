@@ -44,7 +44,7 @@ export default function ProductsPage() {
           throw new Error("Mahsulotlarni yuklashda xatolik yuz berdi");
         }
         const data = await response.json();
-        setProducts(data);
+        setProducts(data.data.products);
       } catch (error) {
         setError(error instanceof Error ? error.message : "Xatolik yuz berdi");
       } finally {
@@ -172,7 +172,7 @@ export default function ProductsPage() {
                     <p className="text-lg font-bold">
                       {product.price.toLocaleString("uz-UZ")} so&apos;m
                     </p>
-                    <Button
+                    {/* <Button
                       size="sm"
                       color="primary"
                       onClick={(e) => {
@@ -185,7 +185,7 @@ export default function ProductsPage() {
                         );
                       }}>
                       Savatchaga
-                    </Button>
+                    </Button> */}
                   </div>
                 </div>
               </CardFooter>

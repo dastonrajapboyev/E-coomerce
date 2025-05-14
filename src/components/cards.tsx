@@ -41,7 +41,10 @@ export default function Cards({ limit }: CardsProps) {
           throw new Error("Mahsulotlarni yuklashda xatolik yuz berdi");
         }
         const data = await response.json();
-        setProducts(limit ? data.slice(0, limit) : data);
+
+        setProducts(
+          limit ? data.data.products.slice(0, limit) : data.data.products
+        );
       } catch (error) {
         setError(error instanceof Error ? error.message : "Xatolik yuz berdi");
       } finally {
@@ -69,14 +72,14 @@ export default function Cards({ limit }: CardsProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full px-0">
       {products.map((product) => (
         <Card
           key={product.id}
           isPressable
           as={Link}
           to={`/product/${product.id}`}
-          className="h-full">
+          className="h-full w-full !max-w-full">
           <CardBody className="p-0">
             <Image
               shadow="sm"
@@ -95,7 +98,7 @@ export default function Cards({ limit }: CardsProps) {
                 <p className="text-lg font-bold">
                   {product.price.toLocaleString("uz-UZ")} so&apos;m
                 </p>
-                <Button
+                {/* <Button
                   size="sm"
                   color="primary"
                   onClick={(e) => {
@@ -103,7 +106,7 @@ export default function Cards({ limit }: CardsProps) {
                     addToCart(product, 1, product.size[0], product.colors[0]);
                   }}>
                   Savatchaga
-                </Button>
+                </Button> */}
               </div>
             </div>
           </CardFooter>
