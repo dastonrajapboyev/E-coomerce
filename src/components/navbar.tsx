@@ -1,5 +1,4 @@
 import { Kbd } from "@heroui/kbd";
-import { Link } from "@heroui/link";
 import { Input } from "@heroui/input";
 import {
   Navbar as HeroUINavbar,
@@ -7,11 +6,24 @@ import {
   NavbarContent,
   NavbarItem,
   NavbarMenuToggle,
-  NavbarMenu,
-  NavbarMenuItem,
+  // NavbarMenu,
+  // NavbarMenuItem,
 } from "@heroui/navbar";
 import { link as linkStyles } from "@heroui/theme";
 import clsx from "clsx";
+import {
+  Navbar as NextUINavbar,
+  NavbarMenu,
+  NavbarMenuItem,
+  Button,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+  Avatar,
+  Link,
+} from "@heroui/react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
@@ -19,6 +31,14 @@ import { Logo, SearchIcon } from "@/components/icons";
 import ShoppingCart from "@/pages/shoppingCart";
 
 export const Navbar = () => {
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/signin");
+  };
+
   const searchInput = (
     <Input
       aria-label="Search"
@@ -32,7 +52,7 @@ export const Navbar = () => {
         </Kbd>
       }
       labelPlacement="outside"
-      placeholder="Search..."
+      placeholder="Qidirish..."
       startContent={
         <SearchIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />
       }
@@ -41,74 +61,102 @@ export const Navbar = () => {
   );
 
   return (
-    <HeroUINavbar maxWidth="xl" position="sticky">
-      <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
-        <NavbarBrand className="gap-3 max-w-fit">
-          <Link
-            className="flex justify-start items-center gap-1"
-            color="foreground"
-            href="/">
+    <NextUINavbar maxWidth="xl" position="sticky">
+      <NavbarContent className="sm:hidden" justify="start">
+        <NavbarMenuToggle />
+      </NavbarContent>
+
+      <NavbarContent className="sm:hidden pr-3" justify="center">
+        <NavbarBrand>
+          <Link className="flex justify-start items-center gap-1" href="/">
             <Logo />
-            <p className="font-bold text-inherit">ACME</p>
+            <p className="font-bold text-inherit">SENTR OBUV</p>
           </Link>
         </NavbarBrand>
-        <div className="hidden lg:flex gap-4 justify-start ml-2">
-          {siteConfig.navItems.map((item) => (
-            <NavbarItem key={item.href}>
-              <Link
-                className={clsx(
-                  linkStyles({ color: "foreground" }),
-                  "data-[active=true]:text-primary data-[active=true]:font-medium"
-                )}
-                color="foreground"
-                href={item.href}>
-                {item.label}
-              </Link>
-            </NavbarItem>
-          ))}
-        </div>
       </NavbarContent>
 
-      <NavbarContent
-        className="hidden sm:flex basis-1/5 sm:basis-full"
-        justify="end">
-        <NavbarItem className="hidden sm:flex gap-2">
+      <NavbarContent className="hidden sm:flex gap-4" justify="center">
+        <NavbarBrand>
+          <Link className="flex justify-start items-center gap-1" href="/">
+            <Logo />
+            <p className="font-bold text-inherit">SENTR OBUV</p>
+          </Link>
+        </NavbarBrand>
+        <NavbarItem>
+          <RouterLink to="/" className="text-foreground">
+            Bosh sahifa
+          </RouterLink>
+        </NavbarItem>
+        <NavbarItem>
+          <RouterLink to="/products" className="text-foreground">
+            Mahsulotlar
+          </RouterLink>
+        </NavbarItem>
+      </NavbarContent>
+
+      <NavbarContent justify="end">
+        <NavbarItem className="hidden lg:flex">{searchInput}</NavbarItem>
+        <NavbarItem className="hidden sm:flex">
           <ThemeSwitch />
         </NavbarItem>
-        <NavbarItem className="hidden lg:flex">{searchInput}</NavbarItem>
         <NavbarItem>
-          {/* Shopping Cart Component */}
           <ShoppingCart />
         </NavbarItem>
-      </NavbarContent>
-
-      <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
-        <ThemeSwitch />
-        <ShoppingCart />
-        <NavbarMenuToggle />
+        <NavbarItem>
+          {token ? (
+            <Dropdown placement="bottom-end">
+              <DropdownTrigger>
+                <Avatar
+                  isBordered
+                  as="button"
+                  className="transition-transform"
+                  color="primary"
+                  size="sm"
+                  icon={<span>👤</span>}
+                />
+              </DropdownTrigger>
+              <DropdownMenu aria-label="Profile Actions" variant="flat">
+                <DropdownItem key="profile" className="h-14 gap-2">
+                  <p className="font-semibold">Profil</p>
+                </DropdownItem>
+                <DropdownItem key="orders">Buyurtmalarim</DropdownItem>
+                <DropdownItem key="settings">Sozlamalar</DropdownItem>
+                <DropdownItem
+                  key="logout"
+                  color="danger"
+                  onClick={handleLogout}>
+                  Chiqish
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          ) : (
+            <Button
+              as={RouterLink}
+              to="/signin"
+              color="primary"
+              variant="flat"
+              startContent={<span>👤</span>}>
+              Kirish
+            </Button>
+          )}
+        </NavbarItem>
       </NavbarContent>
 
       <NavbarMenu>
         {searchInput}
         <div className="mx-4 mt-2 flex flex-col gap-2">
-          {siteConfig.navMenuItems.map((item, index) => (
-            <NavbarMenuItem key={`${item}-${index}`}>
-              <Link
-                color={
-                  index === 2
-                    ? "primary"
-                    : index === siteConfig.navMenuItems.length - 1
-                      ? "danger"
-                      : "foreground"
-                }
-                href="#"
-                size="lg">
-                {item.label}
-              </Link>
-            </NavbarMenuItem>
-          ))}
+          <NavbarMenuItem>
+            <RouterLink to="/" className="w-full text-foreground">
+              Bosh sahifa
+            </RouterLink>
+          </NavbarMenuItem>
+          <NavbarMenuItem>
+            <RouterLink to="/products" className="w-full text-foreground">
+              Mahsulotlar
+            </RouterLink>
+          </NavbarMenuItem>
         </div>
       </NavbarMenu>
-    </HeroUINavbar>
+    </NextUINavbar>
   );
 };

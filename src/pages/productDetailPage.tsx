@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import DefaultLayout from "@/layouts/default";
 import {
   Image,
@@ -58,6 +58,7 @@ export default function ProductDetailPage() {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const { addToCart } = useCart();
   const {} = useDisclosure();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(true);
@@ -95,27 +96,100 @@ export default function ProductDetailPage() {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product) return;
 
+    // Foydalanuvchi tizimga kirganligini tekshirish
+    const tokenData = localStorage.getItem("token");
+    if (!tokenData) {
+      alert("Xarid qilish uchun avval tizimga kiring yoki ro'yxatdan o'ting");
+      navigate("/signin");
+      return;
+    }
+
+    // Mahsulot parametrlarini tekshirish
     if (product.size?.length > 0 && !selectedSize) {
-      // Handle size selection error
+      alert("Iltimos, o'lchamni tanlang");
       return;
     }
 
     if (product.colors?.length > 0 && !selectedColor) {
-      // Handle color selection error
+      alert("Iltimos, rangni tanlang");
       return;
     }
 
+    // Token olish
+    let token = extractToken(tokenData);
+
     setIsAddingToCart(true);
+
     try {
-      addToCart(product, quantity, selectedSize!, selectedColor!);
-      // Handle successful addition
+      // Mahsulotni savatchaga qo'shish
+      const response = await fetch("https://api.sentrobuv.uz/baskets/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          product_id: product.id,
+          name: product.name,
+          count: quantity,
+          color: selectedColor || null,
+          size: selectedSize || null,
+          image: product.productImages[0].image,
+          brand: product.brand,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Mahsulot savatchaga qo'shildi");
+        addToCart(product, quantity, selectedSize!, selectedColor!);
+      } else {
+        handleApiError(data);
+      }
     } catch (error) {
-      // Handle error
+      console.error("Error adding to cart:", error);
+      alert("Xatolik yuz berdi. Qaytadan urinib ko'ring.");
     } finally {
       setIsAddingToCart(false);
+    }
+  };
+
+  // Token olish uchun yordamchi funksiya
+  const extractToken = (tokenData: string): string => {
+    try {
+      const parsedToken = JSON.parse(tokenData);
+      if (parsedToken && parsedToken.tokens) {
+        return parsedToken.tokens.accessToken;
+      } else if (parsedToken && parsedToken.accessToken) {
+        return parsedToken.accessToken;
+      }
+      return tokenData;
+    } catch {
+      return tokenData;
+    }
+  };
+
+  // API xatoliklarini boshqarish
+  interface ApiErrorResponse {
+    message: string;
+    [key: string]: any;
+  }
+
+  const handleApiError = (data: ApiErrorResponse): void => {
+    if (
+      data.message === "jwt malformed" ||
+      data.message === "jwt expired" ||
+      data.message === "invalid signature"
+    ) {
+      localStorage.removeItem("token");
+      alert("Sizning sessiyangiz tugagan. Iltimos, qaytadan kiring.");
+      navigate("/signin");
+    } else {
+      alert(data.message || "Xatolik yuz berdi. Qaytadan urinib ko'ring.");
     }
   };
 
