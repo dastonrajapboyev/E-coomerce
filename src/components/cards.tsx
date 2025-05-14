@@ -1,96 +1,113 @@
-import { useEffect, useState } from "react";
-import { Card, CardHeader, CardBody, Image } from "@heroui/react";
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardBody,
+  CardFooter,
+  Image,
+  Button,
+  Spinner,
+} from "@heroui/react";
 import { Link } from "react-router-dom";
+import { useCart } from "@/Context/CartContext";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
+  price: number;
   brand: string;
-  price: string;
-  size: string[];
   productImages: Array<{
+    id: string;
     image: string;
   }>;
+  colors: string[];
+  size: string[];
 }
 
-interface ApiResponse {
-  data: {
-    products: Product[];
-  };
-}
-
-interface CardComponentProps {
+interface CardsProps {
   limit?: number;
 }
 
-export default function CardComponent({ limit }: CardComponentProps) {
+export default function Cards({ limit }: CardsProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { addToCart } = useCart();
 
   useEffect(() => {
-    setLoading(true);
-    fetch("https://api.sentrobuv.uz/products")
-      .then((res) => res.json())
-      .then((data: ApiResponse) => {
-        const productList = data.data.products || [];
-        // Agar limit berilgan bo'lsa, shu limitgacha chiqarish
-        const limitedProducts = limit
-          ? productList.slice(0, limit)
-          : productList;
-        setProducts(limitedProducts);
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("https://api.sentrobuv.uz/products");
+        if (!response.ok) {
+          throw new Error("Mahsulotlarni yuklashda xatolik yuz berdi");
+        }
+        const data = await response.json();
+        setProducts(limit ? data.slice(0, limit) : data);
+      } catch (error) {
+        setError(error instanceof Error ? error.message : "Xatolik yuz berdi");
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching products:", err);
-        setError("Mahsulotlarni yuklashda xatolik yuz berdi");
-        setLoading(false);
-      });
+      }
+    };
+
+    fetchProducts();
   }, [limit]);
 
   if (loading) {
-    return <div className="w-full text-center py-8">Yuklanmoqda...</div>;
+    return (
+      <div className="flex justify-center items-center h-96">
+        <Spinner size="lg" color="primary" label="Yuklanmoqda..." />
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="w-full text-center py-8 text-red-500">{error}</div>;
-  }
-
-  if (products.length === 0) {
-    return <div className="w-full text-center py-8">Mahsulotlar topilmadi</div>;
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 w-full">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {products.map((product) => (
-        <Link
+        <Card
           key={product.id}
+          isPressable
+          as={Link}
           to={`/product/${product.id}`}
-          className="no-underline">
-          <Card className="py-4 cursor-pointer hover:shadow-lg transition-shadow duration-300">
-            <CardBody className="overflow-visible py-2">
-              <Image
-                alt={product.name}
-                className="object-cover rounded-xl w-full h-72"
-                src={`https://api.sentrobuv.uz/${product.productImages[0]?.image}`}
-                width={0}
-                height={0}
-              />
-            </CardBody>
-
-            <CardHeader className="pb-0 pt-2 px-4 flex-col items-start">
-              <p className="text-tiny uppercase font-bold">{product.brand}</p>
-              <small className="text-default-500">
-                Sizes: {product.size.join(", ")}
-              </small>
-              <h4 className="font-bold text-large">{product.name}</h4>
-              <p className="text-default-500 mt-1">
-                Narxi: {parseInt(product.price).toLocaleString("uz-UZ")}{" "}
-                so&apos;m
-              </p>
-            </CardHeader>
-          </Card>
-        </Link>
+          className="h-full">
+          <CardBody className="p-0">
+            <Image
+              shadow="sm"
+              radius="lg"
+              width="100%"
+              alt={product.name}
+              className="w-full object-cover h-[200px]"
+              src={`https://api.sentrobuv.uz/${product.productImages[0]?.image}`}
+            />
+          </CardBody>
+          <CardFooter className="text-small justify-between">
+            <div className="w-full">
+              <p className="text-sm text-gray-500">{product.brand}</p>
+              <p className="text-sm font-medium line-clamp-2">{product.name}</p>
+              <div className="flex justify-between items-center mt-2">
+                <p className="text-lg font-bold">
+                  {product.price.toLocaleString("uz-UZ")} so&apos;m
+                </p>
+                <Button
+                  size="sm"
+                  color="primary"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    addToCart(product, 1, product.size[0], product.colors[0]);
+                  }}>
+                  Savatchaga
+                </Button>
+              </div>
+            </div>
+          </CardFooter>
+        </Card>
       ))}
     </div>
   );

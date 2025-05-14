@@ -22,16 +22,21 @@ interface ProductImage {
 }
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
+  price: number;
   brand: string;
-  price: string;
-  size: string[];
   colors: string[];
+  size: string[];
   productImages: ProductImage[];
+  description?: string;
 }
 
-const COLOR_MAP: Record<string, string> = {
+interface ColorMap {
+  [key: string]: string;
+}
+
+const colorMap: ColorMap = {
   black: "#000000",
   "dark-blue": "#00008B",
   blue: "#0000FF",
@@ -47,177 +52,85 @@ const COLOR_MAP: Record<string, string> = {
 };
 
 export default function ProductDetailPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string>("");
+  const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const { addToCart } = useCart();
-  const {} = useDisclosure();
-  const navigate = useNavigate();
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`https://api.sentrobuv.uz/products/${id}`)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Failed to fetch product");
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(`https://api.sentrobuv.uz/products/${id}`);
+        if (!response.ok) {
+          throw new Error(
+            "Mahsulot ma'lumotlarini yuklashda xatolik yuz berdi"
+          );
         }
-        return res.json();
-      })
-      .then((data: Product) => {
+        const data = await response.json();
         setProduct(data);
-
-        if (data.size?.length > 0) {
-          setSelectedSize(data.size[0]);
-        }
-        if (data.colors?.length > 0) {
+        if (data.colors && data.colors.length > 0) {
           setSelectedColor(data.colors[0]);
         }
+        if (data.size && data.size.length > 0) {
+          setSelectedSize(data.size[0]);
+        }
+      } catch (error) {
+        setError(error instanceof Error ? error.message : "Xatolik yuz berdi");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching product:", err);
-        setError("Mahsulot ma'lumotlarini yuklashda xatolik yuz berdi");
-        setLoading(false);
-      });
+    if (id) {
+      fetchProduct();
+    }
   }, [id]);
 
   const handleQuantityChange = (action: "increment" | "decrement") => {
-    if (action === "increment") {
-      setQuantity((prev) => prev + 1);
-    } else if (action === "decrement" && quantity > 1) {
-      setQuantity((prev) => prev - 1);
-    }
+    setQuantity((prev) => {
+      if (action === "increment") {
+        return prev + 1;
+      }
+      return Math.max(1, prev - 1);
+    });
   };
 
-  const handleAddToCart = async () => {
+  const handleColorSelect = (colorName: string) => {
+    setSelectedColor(colorName);
+  };
+
+  const handleSizeSelect = (size: string) => {
+    setSelectedSize(size);
+  };
+
+  const handleAddToCart = () => {
     if (!product) return;
 
-    // Foydalanuvchi tizimga kirganligini tekshirish
-    const tokenData = localStorage.getItem("token");
-    if (!tokenData) {
-      alert("Xarid qilish uchun avval tizimga kiring yoki ro'yxatdan o'ting");
-      navigate("/signin");
-      return;
-    }
-
-    // Mahsulot parametrlarini tekshirish
-    if (product.size?.length > 0 && !selectedSize) {
-      alert("Iltimos, o'lchamni tanlang");
-      return;
-    }
-
-    if (product.colors?.length > 0 && !selectedColor) {
+    if (!selectedColor) {
       alert("Iltimos, rangni tanlang");
       return;
     }
 
-    // Token olish
-    let token = extractToken(tokenData);
-
-    setIsAddingToCart(true);
-
-    try {
-      // Mahsulotni savatchaga qo'shish
-      const response = await fetch("https://api.sentrobuv.uz/baskets/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          product_id: product.id,
-          name: product.name,
-          count: quantity,
-          color: selectedColor || null,
-          size: selectedSize || null,
-          image: product.productImages[0].image,
-          brand: product.brand,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert("Mahsulot savatchaga qo'shildi");
-        addToCart(product, quantity, selectedSize!, selectedColor!);
-      } else {
-        handleApiError(data);
-      }
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-      alert("Xatolik yuz berdi. Qaytadan urinib ko'ring.");
-    } finally {
-      setIsAddingToCart(false);
+    if (!selectedSize) {
+      alert("Iltimos, o'lchamni tanlang");
+      return;
     }
-  };
 
-  // Token olish uchun yordamchi funksiya
-  const extractToken = (tokenData: string): string => {
-    try {
-      const parsedToken = JSON.parse(tokenData);
-      if (parsedToken && parsedToken.tokens) {
-        return parsedToken.tokens.accessToken;
-      } else if (parsedToken && parsedToken.accessToken) {
-        return parsedToken.accessToken;
-      }
-      return tokenData;
-    } catch {
-      return tokenData;
-    }
-  };
-
-  // API xatoliklarini boshqarish
-  interface ApiErrorResponse {
-    message: string;
-    [key: string]: any;
-  }
-
-  const handleApiError = (data: ApiErrorResponse): void => {
-    if (
-      data.message === "jwt malformed" ||
-      data.message === "jwt expired" ||
-      data.message === "invalid signature"
-    ) {
-      localStorage.removeItem("token");
-      alert("Sizning sessiyangiz tugagan. Iltimos, qaytadan kiring.");
-      navigate("/signin");
-    } else {
-      alert(data.message || "Xatolik yuz berdi. Qaytadan urinib ko'ring.");
-    }
-  };
-
-  const colorNameToHex = (colorName: string): string => {
-    return COLOR_MAP[colorName] || colorName;
-  };
-
-  const getImageUrl = (imagePath: string): string => {
-    return `https://api.sentrobuv.uz/${imagePath}`;
-  };
-
-  const handleImageError = () => {
-    // fallback logic if needed
-  };
-
-  const handleThumbnailError = () => {
-    // fallback logic if needed
+    addToCart(product, quantity, selectedSize, selectedColor);
+    onOpen();
   };
 
   if (loading) {
     return (
       <DefaultLayout>
         <div className="flex justify-center items-center h-96">
-          <Spinner
-            size="lg"
-            color="secondary"
-            label="Mahsulot yuklanmoqda..."
-          />
+          <Spinner size="lg" color="primary" label="Yuklanmoqda..." />
         </div>
       </DefaultLayout>
     );
@@ -229,8 +142,11 @@ export default function ProductDetailPage() {
         <div className="flex flex-col items-center justify-center h-96">
           <h2 className={title({ color: "foreground" })}>Xatolik</h2>
           <p className="text-lg">{error || "Mahsulot topilmadi"}</p>
-          <Button as="a" href="/products" color="primary" className="mt-4">
-            Mahsulotlar sahifasiga qaytish
+          <Button
+            color="primary"
+            className="mt-4"
+            onClick={() => navigate("/products")}>
+            Mahsulotlarga qaytish
           </Button>
         </div>
       </DefaultLayout>
@@ -239,222 +155,116 @@ export default function ProductDetailPage() {
 
   return (
     <DefaultLayout>
-      <div className="container mx-auto py-8">
-        <Breadcrumbs className="mb-6">
+      <div className="container mx-auto px-4 py-8">
+        <Breadcrumbs className="mb-4">
           <BreadcrumbItem href="/">Bosh sahifa</BreadcrumbItem>
           <BreadcrumbItem href="/products">Mahsulotlar</BreadcrumbItem>
           <BreadcrumbItem>{product.name}</BreadcrumbItem>
         </Breadcrumbs>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Image Section */}
-          <div className="flex flex-col gap-4">
-            <div className="rounded-xl overflow-hidden h-96 border border-gray-200">
+          {/* Product Images */}
+          <div className="space-y-4">
+            <div className="aspect-square rounded-lg overflow-hidden">
               <Image
-                src={getImageUrl(product.productImages[selectedImage]?.image)}
+                src={`https://api.sentrobuv.uz/${product.productImages[0]?.image}`}
                 alt={product.name}
-                className="w-full h-full object-cover object-center"
-                onError={handleImageError}
+                className="w-full h-full object-cover"
               />
             </div>
-
-            {/* Image Navigation */}
-            <div className="flex gap-2 overflow-x-auto py-2">
+            <div className="grid grid-cols-4 gap-2">
               {product.productImages.map((img, index) => (
-                <button
-                  key={img.id}
-                  type="button"
-                  tabIndex={0}
-                  className={`border-2 rounded-lg overflow-hidden cursor-pointer w-24 h-24 
-                    ${selectedImage === index ? "border-primary" : "border-gray-200"}`}
-                  onClick={() => setSelectedImage(index)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      setSelectedImage(index);
-                    }
-                  }}>
+                <div
+                  key={index}
+                  className="aspect-square rounded-lg overflow-hidden">
                   <Image
-                    src={getImageUrl(img.image)}
-                    alt={`${product.name} - rasm ${index + 1}`}
+                    src={`https://api.sentrobuv.uz/${img.image}`}
+                    alt={`${product.name} - ${index + 1}`}
                     className="w-full h-full object-cover"
-                    onError={handleThumbnailError}
                   />
-                </button>
+                </div>
               ))}
             </div>
           </div>
 
-          {/* Product Details */}
-          <div className="flex flex-col gap-4">
+          {/* Product Info */}
+          <div className="space-y-6">
             <div>
-              <Chip color="primary" variant="flat" className="mb-2">
-                {product.brand}
-              </Chip>
-              <h1 className={title()}>{product.name}</h1>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <span key={star} className="text-yellow-500">
-                      ★
-                    </span>
-                  ))}
-                </div>
-                <span className="text-sm text-gray-500">72 ta sharh</span>
-              </div>
+              <h1 className={title({ size: "lg" })}>{product.name}</h1>
+              <p className="text-lg text-gray-500 mt-2">{product.brand}</p>
             </div>
 
-            <div className="my-4">
-              <h2 className={title({ size: "sm" })}>
-                {parseInt(product.price).toLocaleString("uz-UZ")} so&apos;m
+            <div>
+              <h2 className="text-2xl font-bold">
+                {product.price.toLocaleString("uz-UZ")} so&apos;m
               </h2>
-              <p className="text-sm text-gray-500">Barcha soliqlar bilan</p>
             </div>
 
-            <Divider className="my-4" />
+            <Divider />
 
             {/* Colors */}
-            {product.colors && product.colors.length > 0 && (
-              <div className="mb-4">
-                <h3 className="font-semibold mb-2">Rang tanlang</h3>
-                <div className="flex flex-wrap gap-2">
-                  {product.colors.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      tabIndex={0}
-                      className={`w-10 h-10 rounded-full cursor-pointer flex items-center justify-center
-                        ${selectedColor === color ? "ring-2 ring-offset-2 ring-primary" : ""}`}
-                      onClick={() => setSelectedColor(color)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          setSelectedColor(color);
-                        }
-                      }}
-                      style={{ backgroundColor: colorNameToHex(color) }}>
-                      {selectedColor === color && (
-                        <div className="w-3 h-3 rounded-full bg-white" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-sm mt-1">
-                  Tanlangan rang:{" "}
-                  <span className="font-medium">{selectedColor}</span>
-                </p>
+            <div>
+              <h3 className="font-medium mb-2">Ranglar</h3>
+              <div className="flex flex-wrap gap-2">
+                {product.colors.map((color) => (
+                  <Chip
+                    key={color}
+                    variant={selectedColor === color ? "solid" : "flat"}
+                    color={selectedColor === color ? "primary" : "default"}
+                    onClick={() => handleColorSelect(color)}
+                    style={{
+                      backgroundColor: colorMap[color] || color,
+                      color: color === "white" ? "black" : "white",
+                    }}>
+                    {color}
+                  </Chip>
+                ))}
               </div>
-            )}
+            </div>
 
             {/* Sizes */}
-            {product.size && product.size.length > 0 && (
-              <div className="mb-4">
-                <h3 className="font-semibold mb-2">O&apos;lcham tanlang</h3>
-                <div className="flex flex-wrap gap-2">
-                  {product.size.map((size) => (
-                    <Chip
-                      key={size}
-                      variant={selectedSize === size ? "solid" : "bordered"}
-                      color={selectedSize === size ? "primary" : "default"}
-                      className="cursor-pointer"
-                      onClick={() => setSelectedSize(size)}>
-                      {size}
-                    </Chip>
-                  ))}
-                </div>
+            <div>
+              <h3 className="font-medium mb-2">O&apos;lchamlar</h3>
+              <div className="flex flex-wrap gap-2">
+                {product.size.map((size) => (
+                  <Chip
+                    key={size}
+                    variant={selectedSize === size ? "solid" : "flat"}
+                    color={selectedSize === size ? "primary" : "default"}
+                    onClick={() => handleSizeSelect(size)}>
+                    {size}
+                  </Chip>
+                ))}
               </div>
-            )}
+            </div>
 
-            {/* Quantity */}
-            <div className="mb-6">
-              <h3 className="font-semibold mb-2">Miqdor</h3>
-              <div className="flex items-center gap-2">
+            <Divider />
+
+            {/* Quantity and Add to Cart */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
                 <Button
                   isIconOnly
-                  color="default"
                   variant="flat"
-                  size="sm"
-                  onClick={() => handleQuantityChange("decrement")}
-                  isDisabled={quantity <= 1}>
+                  onClick={() => handleQuantityChange("decrement")}>
                   -
                 </Button>
-                <span className="w-10 text-center">{quantity}</span>
+                <span className="text-lg">{quantity}</span>
                 <Button
                   isIconOnly
-                  color="default"
                   variant="flat"
-                  size="sm"
                   onClick={() => handleQuantityChange("increment")}>
                   +
                 </Button>
               </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-4 mt-2">
               <Button
                 color="primary"
                 size="lg"
-                className="flex-grow"
-                onClick={handleAddToCart}
-                isLoading={isAddingToCart}
-                isDisabled={!selectedSize || !selectedColor}>
-                🛒 Savatchaga qo&apos;shish
+                className="w-full"
+                onClick={handleAddToCart}>
+                Savatchaga qo&apos;shish
               </Button>
-              <Button
-                isIconOnly
-                color="danger"
-                variant="flat"
-                size="lg"
-                aria-label="Sevimlilar">
-                ❤️
-              </Button>
-            </div>
-
-            {/* Product Information */}
-            <div className="mt-8">
-              <Tabs variant="underlined" aria-label="Mahsulot ma'lumotlari">
-                <Tab key="details" title="Mahsulot haqida">
-                  <div className="p-4">
-                    <h3 className="font-semibold mb-2">Mahsulot tavsifi</h3>
-                    <p className="text-sm text-gray-600">
-                      {product.name} - {product.brand} tomonidan ishlab
-                      chiqarilgan yuqori sifatli poyabzal. Zamonaviy dizayn va
-                      qulay materiallar bilan tayyorlangan.
-                    </p>
-
-                    <div className="mt-4">
-                      <h4 className="font-medium mb-1">Xususiyatlari:</h4>
-                      <ul className="list-disc list-inside text-sm text-gray-600">
-                        <li>Yuqori sifatli materiallar</li>
-                        <li>Zamonaviy dizayn</li>
-                        <li>Qulay va issiq</li>
-                        <li>
-                          Uzoq muddat foydalanish uchun mo&apos;ljallangan
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </Tab>
-                <Tab key="shipping" title="Yetkazib berish">
-                  <div className="p-4">
-                    <h3 className="font-semibold mb-2">
-                      Yetkazib berish ma&apos;lumotlari
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      Toshkent shahri bo&apos;ylab 1-3 kun ichida bepul yetkazib
-                      beriladi. Viloyatlarga 3-5 kun ichida yetkazib berish
-                      mavjud.
-                    </p>
-                  </div>
-                </Tab>
-                <Tab key="reviews" title="Sharhlar">
-                  <div className="p-4">
-                    <h3 className="font-semibold mb-2">Mijozlar sharhlari</h3>
-                    <p className="text-sm text-gray-600">
-                      Hozircha sharhlar mavjud emas.
-                    </p>
-                  </div>
-                </Tab>
-              </Tabs>
             </div>
           </div>
         </div>
